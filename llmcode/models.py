@@ -70,6 +70,7 @@ claude-3-5-sonnet-20240620
 claude-3-5-sonnet-20241022
 claude-sonnet-4-20250514
 claude-opus-4-20250514
+bedrock/anthropic.claude-4.5-sonnet-v1
 """
 
 ANTHROPIC_MODELS = [ln.strip() for ln in ANTHROPIC_MODELS.splitlines() if ln.strip()]
@@ -80,6 +81,7 @@ MODEL_ALIASES = {
     "sonnet": "anthropic/claude-sonnet-4-20250514",
     "haiku": "claude-3-5-haiku-20241022",
     "opus": "claude-opus-4-20250514",
+    "claude-4.5": "bedrock/anthropic.claude-4.5-sonnet-v1",
     # GPT models
     "4": "gpt-4-0613",
     "4o": "gpt-4o",
