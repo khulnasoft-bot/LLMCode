@@ -55,6 +55,7 @@ gpt-3.5-turbo-1106
 gpt-3.5-turbo-0125
 gpt-3.5-turbo-16k
 gpt-3.5-turbo-16k-0613
+gpt-5-codex
 """
 
 OPENAI_MODELS = [ln.strip() for ln in OPENAI_MODELS.splitlines() if ln.strip()]
@@ -100,6 +101,7 @@ MODEL_ALIASES = {
     "gemini-exp": "gemini/gemini-2.5-pro-exp-03-25",
     "grok3": "xai/grok-3-beta",
     "optimus": "openrouter/openrouter/optimus-alpha",
+    "codex": "openai/gpt-5-codex",
 }
 # Model metadata loaded from resources and user's files.
 
