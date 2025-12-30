@@ -4,7 +4,6 @@ import json
 import os
 import sys
 import time
-from pathlib import Path
 
 import requests
 
@@ -42,7 +41,7 @@ def try_download_tags(owner, repo, branch, directory, output_path):
 
 def main():
     # Path to the language definitions file
-    lang_def_path = Path(__file__).parent.parent / "tmp" / "tree-sitter-language-pack" / "sources" / "language_definitions.json"
+    lang_def_path = "../../tmp/tree-sitter-language-pack/sources/language_definitions.json"
 
     # Path to store the tags.scm files
     output_dir = "llmcode/queries/tree-sitter-language-pack"
