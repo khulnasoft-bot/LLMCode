@@ -56,9 +56,18 @@ gpt-3.5-turbo-0125
 gpt-3.5-turbo-16k
 gpt-3.5-turbo-16k-0613
 gpt-5-codex
+gpt-4.5-turbo
+gpt-4.5-vision-preview
 """
 
 OPENAI_MODELS = [ln.strip() for ln in OPENAI_MODELS.splitlines() if ln.strip()]
+
+GEMINI_MODELS = """
+gemini-1.5-pro-latest
+gemini-1.5-flash-latest
+"""
+
+GEMINI_MODELS = [ln.strip() for ln in GEMINI_MODELS.splitlines() if ln.strip()]
 
 ANTHROPIC_MODELS = """
 claude-2
@@ -87,9 +96,14 @@ MODEL_ALIASES = {
     "4": "gpt-4-0613",
     "4o": "gpt-4o",
     "4-turbo": "gpt-4-1106-preview",
+    "gpt-4.5-turbo": "openai/gpt-4.5-turbo",
+    "gpt-4.5-vision": "openai/gpt-4.5-vision-preview",
     "35turbo": "gpt-3.5-turbo",
     "35-turbo": "gpt-3.5-turbo",
     "3": "gpt-3.5-turbo",
+    # Gemini models
+    "gemini-1.5-pro": "gemini/gemini-1.5-pro-latest",
+    "gemini-1.5-flash": "gemini/gemini-1.5-flash-latest",
     # Other models
     "deepseek": "deepseek/deepseek-chat",
     "flash": "gemini/gemini-2.5-flash",
