@@ -1,3 +1,12 @@
+import os
+import subprocess
+import sys
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple, Union
+
+import oslex
+
 from llmcode.exceptions import (DependencyError, FileOperationError,
                                 NetworkError, ValidationError)
 

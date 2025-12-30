@@ -1,11 +1,15 @@
-from pygls.client import JsonRpcClient
-from pygls.lsp.types import TextDocumentIdentifier, Position, Location, Diagnostic, Hover
-from typing import List, Optional, Dict
-import os
 import json
+import os
+from typing import Dict, List, Optional
+
+from pygls.client import JsonRpcClient
+from pygls.lsp.types import (Diagnostic, Hover, Location, Position,
+                             TextDocumentIdentifier)
+
 from llmcode.cross_file import find_symbol
 
 CACHE_FILE = ".lsp_cache.json"
+
 
 class LspBridge:
     def __init__(self, server_cmd: List[str]):
@@ -23,16 +27,17 @@ class LspBridge:
         with open(CACHE_FILE, "w") as f:
             json.dump(self.cache, f, indent=2)
 
-    def go_to_definition(self, file_path: str, line: int, character: int) -> Optional[Location]:
+    def go_to_definition(
+        self, file_path: str, line: int, character: int
+    ) -> Optional[Location]:
         key = f"def:{file_path}:{line}:{character}"
         if key in self.cache:
             return self.cache[key]
         doc = TextDocumentIdentifier(uri=f"file://{os.path.abspath(file_path)}")
         pos = Position(line=line, character=character)
-        result = self.client.lsp.send_request("textDocument/definition", {
-            "textDocument": doc,
-            "position": pos
-        })
+        result = self.client.lsp.send_request(
+            "textDocument/definition", {"textDocument": doc, "position": pos}
+        )
         if result and result.result:
             self.cache[key] = result.result
             self._save_cache()
@@ -50,9 +55,9 @@ class LspBridge:
         if key in self.cache:
             return self.cache[key]
         doc = TextDocumentIdentifier(uri=f"file://{os.path.abspath(file_path)}")
-        result = self.client.lsp.send_request("textDocument/publishDiagnostics", {
-            "textDocument": doc
-        })
+        result = self.client.lsp.send_request(
+            "textDocument/publishDiagnostics", {"textDocument": doc}
+        )
         if result and result.result:
             self.cache[key] = result.result
             self._save_cache()
@@ -65,10 +70,9 @@ class LspBridge:
             return self.cache[key]
         doc = TextDocumentIdentifier(uri=f"file://{os.path.abspath(file_path)}")
         pos = Position(line=line, character=character)
-        result = self.client.lsp.send_request("textDocument/hover", {
-            "textDocument": doc,
-            "position": pos
-        })
+        result = self.client.lsp.send_request(
+            "textDocument/hover", {"textDocument": doc, "position": pos}
+        )
         if result and result.result:
             self.cache[key] = result.result
             self._save_cache()
@@ -85,6 +89,7 @@ class LspBridge:
             return code_line.split()[1] if len(code_line.split()) > 1 else None
         except Exception:
             return None
+
 
 # Example usage:
 # lsp = LspBridge(["pylsp"])

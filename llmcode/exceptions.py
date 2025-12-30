@@ -279,6 +279,39 @@ class NetworkError(LlmcodeError):
             self.details["url"] = url
 
 
+class ProjectPermissionError(LlmcodeError):
+    """
+    Raised when there's a permission issue related to a project in Vertex AI.
+
+    This includes problems with authentication, authorization, or
+    insufficient permissions for the specified project.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        project_id: Optional[str] = None,
+        permission: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the ProjectPermissionError.
+
+        Args:
+            message: Human-readable error message
+            project_id: The project ID that caused the permission issue
+            permission: The specific permission that was missing
+            **kwargs: Additional context information
+        """
+        super().__init__(message, kwargs)
+        self.project_id = project_id
+        self.permission = permission
+        if project_id:
+            self.details["project_id"] = project_id
+        if permission:
+            self.details["permission"] = permission
+
+
 class LiteLLMExceptions:
     exceptions = dict()
     exception_info = {exi.name: exi for exi in EXCEPTIONS}

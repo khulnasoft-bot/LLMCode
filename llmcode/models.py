@@ -16,6 +16,7 @@ import json5
 import yaml
 from PIL import Image
 
+from llmcode.openrouter import OpenRouterModelManager
 from llmcode.validation import validate_model_name
 
 RETRY_TIMEOUT = 60
