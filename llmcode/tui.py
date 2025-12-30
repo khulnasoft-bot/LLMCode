@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Tree, Input, Static, TextLog
+from textual.widgets import Header, Footer, Tree, Input, Static, RichLog as TextLog
 from textual.containers import Container, Horizontal
 import os
 

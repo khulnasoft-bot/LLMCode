@@ -346,6 +346,7 @@ These changes replace the `subprocess.run` patches with `subprocess.check_output
                 use_git=False,
                 io=InputOutput(yes=True),
                 fnames=files,
+                dry_run=False,
             )
 
             def mock_send(*args, **kwargs):
@@ -382,7 +383,13 @@ creating a new file
         files = [file1]
 
         # Initialize the Coder object with the mocked IO and mocked repo
-        coder = Coder.create(self.GPT35, "diff", io=InputOutput(), fnames=files)
+        coder = Coder.create(
+            self.GPT35,
+            "diff",
+            io=InputOutput(yes=True),
+            fnames=files,
+            dry_run=False,
+        )
 
         def mock_send(*args, **kwargs):
             coder.partial_response_content = f"""

@@ -38,6 +38,30 @@ class EditBlockCoder(Coder):
     def apply_edits_dry_run(self, edits):
         return self.apply_edits(edits, dry_run=True)
 
+    def get_diffs(self, edits):
+        diffs = []
+        for path, original, updated in edits:
+            if original is None:
+                continue
+
+            full_path = self.abs_root_path(path)
+            if Path(full_path).exists():
+                content = self.io.read_text(full_path)
+            else:
+                content = ""
+
+            new_content = do_replace(full_path, content, original, updated, self.fence)
+
+            if new_content:
+                diff = difflib.unified_diff(
+                    content.splitlines(keepends=True),
+                    new_content.splitlines(keepends=True),
+                    fromfile=path,
+                    tofile=path,
+                )
+                diffs.append("".join(diff))
+        return diffs
+
     def apply_edits(self, edits, dry_run=False):
         failed = []
         passed = []

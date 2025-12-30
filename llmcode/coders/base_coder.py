@@ -24,7 +24,7 @@ except ImportError:  # Babel not installed – we will fall back to a small mapp
     Locale = None
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, Generator, List, Optional, Set, Type
 
 from rich.console import Console
 
@@ -84,6 +84,59 @@ all_fences = [
 
 
 class Coder:
+    """
+    The Coder class is the core of llmcode, acting as the main controller for all
+    interactions between the user, the filesystem, and the large language model.
+    It is responsible for managing the chat session, including context from files,
+    constructing prompts, sending them to the model, processing the model's
+    response, and applying code changes to the user's files.
+
+    Key Responsibilities:
+    - **Session and Context Management:** Keeps track of files in the chat,
+      distinguishing between editable and read-only files.
+    - **Prompt Engineering:** Gathers context from the repository (RepoMap),
+      chat history, and files to construct a comprehensive system prompt
+      tailored to the specific coder's edit format.
+    - **Model Interaction:** Handles the complete lifecycle of sending a request
+      to the LLM, including streaming the response, handling errors (like
+      token limits), and managing retries.
+    - **Response Processing:** Parses the LLM's output, which could be code
+      edits, shell commands, or conversational text.
+    - **Filesystem Operations:** Applies edits to files, and can perform
+      related actions like linting, testing, and auto-committing changes
+      with git.
+    - **User Interface:** Mediates all I/O with the user through an `InputOutput`
+      object, showing announcements, asking for confirmations, and displaying
+      model output.
+    - **Extensibility:** The `create` classmethod acts as a factory, allowing
+      for different "coders" with distinct `edit_format` capabilities to be
+      instantiated. Each coder subclass can define its own prompting strategy
+      and response parsing logic.
+
+    Coder Lifecycle:
+    1.  **Initialization (`__init__`):** A Coder is instantiated, setting up its
+        environment (repo, files, models) and configuration (auto-lint,
+        auto-commit, etc.).
+    2.  **User Input (`run` loop):** The coder waits for user input.
+    3.  **Command/Message Processing (`run_one`):**
+        -   User input is parsed. If it's a command (e.g., `/add`), it's
+            executed.
+        -   If it's a message, the coder prepares to send it to the LLM.
+    4.  **Prompt Construction (`format_messages`):** The coder assembles the
+        full prompt, including the system prompt, historical messages, repo
+        context, and file content.
+    5.  **LLM Interaction (`send_message` -> `send`):** The formatted messages
+        are sent to the LLM. The response is streamed back.
+    6.  **Response Handling:**
+        -   The streamed response is displayed to the user.
+        -   Code edits are extracted from the response.
+    7.  **File Updates (`apply_updates`):** If edits are present, they are
+        applied to the local filesystem.
+    8.  **Post-Edit Actions:** After applying edits, the coder may run linters,
+        tests, or create a git commit.
+    9.  **Loop:** The coder then waits for the next user input.
+    """
+
     abs_fnames = None
     abs_read_only_fnames = None
     repo = None
@@ -121,14 +174,41 @@ class Coder:
 
     @classmethod
     def create(
-        self,
-        main_model=None,
-        edit_format=None,
-        io=None,
-        from_coder=None,
-        summarize_from_coder=True,
+        cls: Type["Coder"],
+        main_model: Optional[models.Model] = None,
+        edit_format: Optional[str] = None,
+        io: Optional[InputOutput] = None,
+        from_coder: Optional["Coder"] = None,
+        summarize_from_coder: bool = True,
         **kwargs,
-    ):
+    ) -> "Coder":
+        """
+        A factory method to create or switch between different coder instances.
+
+        This method is the designated way to instantiate a Coder. It can be used
+        to create a new coder from scratch or to transition from an existing
+        coder, carrying over its state (like chat history and files). The new
+        coder is chosen based on the `edit_format`.
+
+        Args:
+            cls: The Coder class.
+            main_model: The main language model to use.
+            edit_format: The desired edit format, which determines which Coder
+                         subclass to instantiate.
+            io: The InputOutput object for user interaction.
+            from_coder: An existing Coder instance to clone state from.
+            summarize_from_coder: If true, summarize the history of the old
+                                  coder to save tokens.
+            **kwargs: Additional keyword arguments to pass to the new Coder's
+                      `__init__` method.
+
+        Returns:
+            An new instance of a Coder subclass that matches the
+            requested `edit_format`.
+
+        Raises:
+            UnknownEditFormat: If no coder with the specified `edit_format` can be found.
+        """
         import llmcode.coders as coders
 
         if not main_model:
@@ -204,7 +284,20 @@ class Coder:
         ]
         raise UnknownEditFormat(edit_format, valid_formats)
 
-    def clone(self, **kwargs):
+    def clone(self, **kwargs) -> "Coder":
+        """
+        Creates a new Coder instance by cloning the current one.
+
+        This is a convenience method that calls the `create` factory, passing
+        the current coder instance to carry over state.
+
+        Args:
+            **kwargs: Additional keyword arguments to override the existing
+                      coder's parameters.
+
+        Returns:
+            A new Coder instance with the updated configuration.
+        """
         new_coder = Coder.create(from_coder=self, **kwargs)
         return new_coder
 
@@ -304,47 +397,96 @@ class Coder:
 
     def __init__(
         self,
-        main_model,
-        io,
-        repo=None,
-        fnames=None,
-        add_gitignore_files=False,
-        read_only_fnames=None,
-        show_diffs=False,
-        auto_commits=True,
-        dirty_commits=True,
-        dry_run=False,
-        map_tokens=1024,
-        verbose=False,
-        stream=True,
-        use_git=True,
-        cur_messages=None,
-        done_messages=None,
-        restore_chat_history=False,
-        auto_lint=True,
-        auto_test=False,
-        lint_cmds=None,
-        test_cmd=None,
-        llmcode_commit_hashes=None,
-        map_mul_no_files=8,
-        commands=None,
-        summarizer=None,
-        total_cost=0.0,
-        analytics=None,
-        map_refresh="auto",
-        cache_prompts=False,
-        num_cache_warming_pings=0,
-        suggest_shell_commands=True,
-        chat_language=None,
-        commit_language=None,
-        detect_urls=True,
-        ignore_mentions=None,
-        total_tokens_sent=0,
-        total_tokens_received=0,
-        file_watcher=None,
-        auto_copy_context=False,
-        auto_accept_architect=True,
+        main_model: models.Model,
+        io: InputOutput,
+        repo: Optional[GitRepo] = None,
+        fnames: Optional[List[str]] = None,
+        add_gitignore_files: bool = False,
+        read_only_fnames: Optional[List[str]] = None,
+        show_diffs: bool = False,
+        auto_commits: bool = True,
+        dirty_commits: bool = True,
+        dry_run: bool = False,
+        map_tokens: int = 1024,
+        verbose: bool = False,
+        stream: bool = True,
+        use_git: bool = True,
+        cur_messages: Optional[List[Dict[str, Any]]] = None,
+        done_messages: Optional[List[Dict[str, Any]]] = None,
+        restore_chat_history: bool = False,
+        auto_lint: bool = True,
+        auto_test: bool = False,
+        lint_cmds: Optional[Dict[str, str]] = None,
+        test_cmd: Optional[str] = None,
+        llmcode_commit_hashes: Optional[Set[str]] = None,
+        map_mul_no_files: int = 8,
+        commands: Optional[Commands] = None,
+        summarizer: Optional[ChatSummary] = None,
+        total_cost: float = 0.0,
+        analytics: Optional[Analytics] = None,
+        map_refresh: str = "auto",
+        cache_prompts: bool = False,
+        num_cache_warming_pings: int = 0,
+        suggest_shell_commands: bool = True,
+        chat_language: Optional[str] = None,
+        commit_language: Optional[str] = None,
+        detect_urls: bool = True,
+        ignore_mentions: Optional[Set[str]] = None,
+        total_tokens_sent: int = 0,
+        total_tokens_received: int = 0,
+        file_watcher: Optional[Any] = None,
+        auto_copy_context: bool = False,
+        auto_accept_architect: bool = True,
     ):
+        """
+        Initializes a Coder instance.
+
+        This is a complex constructor that sets up the entire environment for the
+        coding assistant. It's generally recommended to use the `Coder.create()`
+        factory method instead of calling this directly.
+
+        Args:
+            main_model: The language model to use for the main chat.
+            io: The InputOutput object for all user I/O.
+            repo: The GitRepo object for the current repository.
+            fnames: A list of file paths to include in the chat context.
+            add_gitignore_files: Whether to include files matched by .gitignore.
+            read_only_fnames: A list of file paths to include as read-only context.
+            show_diffs: Whether to display diffs before applying changes.
+            auto_commits: Whether to automatically commit changes.
+            dirty_commits: Whether to allow commits on a dirty repo.
+            dry_run: If True, no changes will be written to disk.
+            map_tokens: The number of tokens to use for the repository map.
+            verbose: Whether to output verbose logging.
+            stream: Whether to stream responses from the LLM.
+            use_git: Whether to use git for repository operations.
+            cur_messages: A list of messages in the current turn.
+            done_messages: A list of messages from previous turns.
+            restore_chat_history: Whether to restore history from a file.
+            auto_lint: Whether to run the linter after making changes.
+            auto_test: Whether to run tests after making changes.
+            lint_cmds: A dictionary of linter commands for different languages.
+            test_cmd: The command to run for tests.
+            llmcode_commit_hashes: A set of commit hashes made by llmcode.
+            map_mul_no_files: Multiplier for map tokens when no files are in chat.
+            commands: A Commands object for handling slash-commands.
+            summarizer: A ChatSummary object for summarizing history.
+            total_cost: The total cost of API calls so far.
+            analytics: An Analytics object for tracking events.
+            map_refresh: The refresh strategy for the repository map.
+            cache_prompts: Whether to use prompt caching.
+            num_cache_warming_pings: Number of times to warm the cache.
+            suggest_shell_commands: Whether the model should suggest shell commands.
+            chat_language: The language for the chat.
+            commit_language: The language for commit messages.
+            detect_urls: Whether to detect and offer to add URLs to chat.
+            ignore_mentions: A set of file mentions to ignore.
+            total_tokens_sent: Total tokens sent to the API.
+            total_tokens_received: Total tokens received from the API.
+            file_watcher: A file watcher object.
+            auto_copy_context: Whether to copy context automatically.
+            auto_accept_architect: Whether to accept architect proposals automatically.
+        """
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()
 
@@ -903,7 +1045,21 @@ class Coder:
         if self.repo:
             self.commit_before_message.append(self.repo.get_head_commit_sha())
 
-    def run(self, with_message=None, preproc=True):
+    def run(self, with_message: Optional[str] = None, preproc: bool = True) -> Optional[str]:
+        """
+        The main execution loop for the coder.
+
+        This method either runs once with a provided message or enters a
+        continuous loop to get input from the user and process it.
+
+        Args:
+            with_message: A message to process. If provided, the loop runs once.
+            preproc: Whether to preprocess the user's input for commands, etc.
+
+        Returns:
+            The content of the last assistant reply if `with_message` is provided,
+            otherwise `None`.
+        """
         try:
             if with_message:
                 self.io.user_input(with_message)
@@ -955,7 +1111,19 @@ class Coder:
 
         return inp
 
-    def run_one(self, user_message, preproc):
+    def run_one(self, user_message: str, preproc: bool) -> None:
+        """
+        Processes a single user message.
+
+        This method initializes the state for a new message, preprocesses the
+        input (if requested), and then enters a loop to send the message to the
+        LLM. It also handles the "reflection" mechanism, where the LLM can
+        critique its own output and try again.
+
+        Args:
+            user_message: The message from the user.
+            preproc: Whether to preprocess the user's input.
+        """
         self.init_before_message()
 
         if preproc:
@@ -1373,7 +1541,17 @@ class Coder:
 
         return chunks
 
-    def format_messages(self):
+    def format_messages(self) -> ChatChunks:
+        """
+        Assembles the message list to be sent to the LLM.
+
+        This method gathers all the different pieces of context (system prompt,
+        examples, history, repo map, files) and formats them into a `ChatChunks`
+        object, which is then converted into a list of messages for the API.
+
+        Returns:
+            A `ChatChunks` object containing all the messages and context.
+        """
         chunks = self.format_chat_chunks()
         if self.add_cache_headers:
             chunks.add_cache_control_headers()
@@ -1461,7 +1639,23 @@ class Coder:
                 return False
         return True
 
-    def send_message(self, inp):
+    def send_message(self, inp: str) -> Generator[Any, None, None]:
+        """
+        Sends a user's message to the LLM and processes the response.
+
+        This is a generator method that orchestrates the entire process of
+        sending a message and handling the streamed response. It formats the
+        messages, checks token limits, and then enters a loop to handle API
+        calls, retries, and potential context window errors. After the stream
+        is complete, it processes the assistant's reply, applies edits, and
+        handles post-edit actions like linting and testing.
+
+        Args:
+            inp: The user's input message.
+
+        Yields:
+            The raw chunks from the `litellm` completion stream.
+        """
         self.event("message_send_starting")
 
         # Notify IO that LLM processing is starting
@@ -2385,15 +2579,31 @@ class Coder:
 
         return res
 
+    def get_diffs(self, edits):
+        return []
+
     def apply_updates(self):
         edited = set()
         try:
             edits = self.get_edits()
             edits = self.apply_edits_dry_run(edits)
             edits = self.prepare_to_edit(edits)
-            edited = set(edit[0] for edit in edits)
+
+            if not self.dry_run and edits:
+                diffs = self.get_diffs(edits)
+                if diffs:
+                    self.io.show_diffs("\n".join(diffs))
+                    if not self.io.confirm_ask("Apply these changes?"):
+                        self.io.tool_output("Changes not applied.")
+                        # we are not applying edits, but prepare_to_edit might have created files
+                        # and added them to git. So we should commit them.
+                        edited = set(edit[0] for edit in edits if edit[0])
+                        self.auto_commit(edited)
+                        return set()
 
             self.apply_edits(edits)
+            edited = set(edit[0] for edit in edits if edit[0])
+
         except ValueError as err:
             self.num_malformed_responses += 1
 

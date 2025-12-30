@@ -552,8 +552,8 @@ def get_parser(
     group.add_argument(
         "--dry-run",
         action=argparse.BooleanOptionalAction,
-        default=False,
-        help="Perform a dry run without modifying files (default: False)",
+        default=True,
+        help="Perform a dry run without modifying files (default: True)",
     )
     group.add_argument(
         "--skip-sanity-check-repo",
