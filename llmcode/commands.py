@@ -2009,7 +2009,9 @@ def mcp_list():
                 return
             print("Configured MCP servers:")
             for server in servers:
-                print(f"- {server}")
+                # derive extension name from URL
+                extension_name = server.split("/")[-1]
+                print(f"- {extension_name}: {server}")
     except FileNotFoundError:
         print("No MCP servers configured.")
 
