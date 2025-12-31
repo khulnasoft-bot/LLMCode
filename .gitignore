@@ -2,7 +2,6 @@
 .vscode/
 llmcode.code-workspace
 *.pyc
-.llmcode*
 llmcode.egg-info/
 build
 dist/
@@ -18,4 +17,3 @@ venv/
 .gitattributes
 tmp.benchmarks/
 .docker_bash_history
-.llmcode*
