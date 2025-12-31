@@ -14,10 +14,12 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import json5
 import yaml
+from llmcode.llm import litellm
 from PIL import Image
 
 from llmcode.openrouter import OpenRouterModelManager
 from llmcode.validation import validate_model_name
+from llmcode.exceptions import ModelError
 
 RETRY_TIMEOUT = 60
 

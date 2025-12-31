@@ -15,9 +15,14 @@ from PIL import Image, ImageGrab
 from prompt_toolkit.completion import Completion, PathCompleter
 from prompt_toolkit.document import Document
 
-from llmcode.exceptions import (ConfigurationError, FileOperationError,
+from llmcode.exceptions import (ANY_GIT_ERROR, ConfigurationError, FileOperationError,
                                 LlmcodeError, ModelError, NetworkError,
                                 RepositoryError, ValidationError)
+from llmcode.utils import is_image_file
+from llmcode.help import install_help_extra
+from llmcode import models
+from llmcode.run_cmd import run_cmd
+
 
 from .context_expansion import list_files_by_size, select_scope
 from .cross_file import build_symbol_index, find_symbol

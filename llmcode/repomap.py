@@ -286,7 +286,7 @@ class RepoMap:
 
         # Run the tags queries
         query = language.query(query_scm)
-        captures = query.captures(tree.root_node)
+        captures = query.matches(tree.root_node)
 
         saw = set()
         if USING_TSL_PACK:

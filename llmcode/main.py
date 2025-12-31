@@ -27,6 +27,8 @@ from llmcode.format_settings import format_settings, scrub_sensitive_info
 from llmcode.validation import (validate_api_key_format,
                                 validate_environment_variable_name,
                                 validate_model_name, validate_numeric_input)
+from llmcode.report import report_uncaught_exceptions
+
 
 
 def validate_configuration(args) -> List[str]:
