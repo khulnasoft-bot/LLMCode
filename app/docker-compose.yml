@@ -1,0 +1,38 @@
+services:
+  llmcode-postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: llmcode
+      POSTGRES_USER: llmcode
+      POSTGRES_DB: llmcode
+    ports:
+      - "5432:5432"
+    volumes:
+      - llmcode-db:/var/lib/postgresql/data
+    networks:
+      - llmcode-network
+  llmcode-server:
+    image: llmcodeai/llmcode-server:latest
+    volumes:
+      - llmcode-files:/llmcode-server
+    ports:
+      - "8099:8099"
+    environment:
+      DATABASE_URL: "postgres://llmcode:llmcode@llmcode-postgres:5432/llmcode?sslmode=disable"
+      GOENV: development
+      LOCAL_MODE: 1
+      LLMCODE_BASE_DIR: /llmcode-server
+    networks:
+      - llmcode-network
+    depends_on:
+      - llmcode-postgres
+    command: [ "/bin/sh", "-c", "/scripts/wait-for-it.sh llmcode-postgres:5432 -- ./llmcode-server" ]
+
+networks:
+  llmcode-network:
+    driver: bridge
+
+volumes:
+  llmcode-db:
+  llmcode-files:
