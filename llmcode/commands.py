@@ -1966,6 +1966,44 @@ def symbol(name: str):
     print(result)
 
 
+@tui_app.command()
+def directory(
+    list: bool = typer.Option(False, "--list", "-l", help="List directories in the current workspace."),
+):
+    """
+    Manage workspace directories.
+    """
+    if list:
+        # List directories in the current workspace
+        for item in os.listdir("."):
+            if os.path.isdir(item):
+                print(item)
+
+
+@tui_app.command()
+def extensions(
+    list: bool = typer.Option(False, "--list", "-l", help="List available extensions."),
+):
+    """
+    Manage llmcode extensions.
+    """
+    if list:
+        # Placeholder: List available extensions
+        print("Listing extensions (not yet implemented).")
+
+
+@tui_app.command()
+def mcp(
+    list: bool = typer.Option(False, "--list", "-l", help="List configured MCP servers."),
+):
+    """
+    Manage configured Model Context Protocol (MCP) servers.
+    """
+    if list:
+        # Placeholder: List configured MCP servers
+        print("Listing MCP servers (not yet implemented).")
+
+
 def main():
     tui_app()
 
