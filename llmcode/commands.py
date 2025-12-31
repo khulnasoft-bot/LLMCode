@@ -1992,19 +1992,39 @@ def extensions(
         print("Listing extensions (not yet implemented).")
 
 
-@tui_app.command()
-def mcp(
-    list: bool = typer.Option(False, "--list", "-l", help="List configured MCP servers."),
+mcp_app = typer.Typer()
+
+
+@mcp_app.command("list")
+def mcp_list():
+    """
+    List configured MCP servers.
+    """
+    print("Listing MCP servers (not yet implemented).")
+
+
+@mcp_app.command("add")
+def mcp_add(
+    url: str = typer.Argument(..., help="The URL of the MCP server to add."),
 ):
     """
-    Manage configured Model Context Protocol (MCP) servers.
+    Add a new MCP server.
     """
-    if list:
-        # Placeholder: List configured MCP servers
-        print("Listing MCP servers (not yet implemented).")
+    print(f"Adding MCP server: {url} (not yet implemented).")
+
+
+@mcp_app.command("remove")
+def mcp_remove(
+    url: str = typer.Argument(..., help="The URL of the MCP server to remove."),
+):
+    """
+    Remove an MCP server.
+    """
+    print(f"Removing MCP server: {url} (not yet implemented).")
 
 
 def main():
+    tui_app.add_typer(mcp_app, name="mcp", help="Manage configured Model Context Protocol (MCP) servers.")
     tui_app()
 
 
