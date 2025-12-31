@@ -1982,14 +1982,38 @@ def directory(
 
 @tui_app.command()
 def extensions(
-    list: bool = typer.Option(False, "--list", "-l", help="List available extensions."),
+    list_extensions: bool = typer.Option(False, "--list", "-l", help="List available extensions."),
 ):
     """
     Manage llmcode extensions.
     """
-    if list:
-        # Placeholder: List available extensions
-        print("Listing extensions (not yet implemented).")
+    if list_extensions:
+        global_extensions_path = Path.home() / ".llmcode" / "extensions"
+        workspace_extensions_path = Path(".llmcode")
+
+        global_extensions = {}
+        if global_extensions_path.is_dir():
+            for item in global_extensions_path.iterdir():
+                if item.is_dir():
+                    global_extensions[item.name] = item
+
+        workspace_extensions = {}
+        if workspace_extensions_path.is_dir():
+            for item in workspace_extensions_path.iterdir():
+                if item.is_dir():
+                    workspace_extensions[item.name] = item
+
+        active_extensions = global_extensions.copy()
+        active_extensions.update(workspace_extensions) # Workspace extensions take precedence
+
+        if not active_extensions:
+            print("No extensions found.")
+            return
+
+        print("Active LLMCode Extensions:")
+        for name, path in sorted(active_extensions.items()):
+            location_type = "Workspace" if name in workspace_extensions else "Global"
+            print(f"- {name} (Location: {location_type}, Path: {path})")
 
 
 mcp_app = typer.Typer()
