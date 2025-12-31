@@ -1,0 +1,19 @@
+# Configuration for the LLMCode review agent
+
+review_agent:
+  model: "gemini-pro"  # Default model for code review
+  review_criteria:
+    - "bug_risk"
+    - "code_style"
+    - "performance"
+    - "security_vulnerabilities"
+    - "readability"
+  ignore_patterns:
+    - "tests/"
+    - "docs/"
+    - "node_modules/"
+    - "*.min.js"
+    - "*.css"
+  thresholds:
+    bug_risk: "high"
+    code_style: "medium"
