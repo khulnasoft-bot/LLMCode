@@ -10,25 +10,26 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import pyperclip
+import typer
 from PIL import Image, ImageGrab
 from prompt_toolkit.completion import Completion, PathCompleter
 from prompt_toolkit.document import Document
-import typer
 
 from llmcode.exceptions import (ConfigurationError, FileOperationError,
                                 LlmcodeError, ModelError, NetworkError,
                                 RepositoryError, ValidationError)
 
-from .dump import dump  # noqa: F401
-from .tui import LlmcodeTUI
 from .context_expansion import list_files_by_size, select_scope
-from .error_ingest import ingest_error_logs
-from .git_utils import create_auto_branch, generate_commit_message, commit_changes
-from .vector_db import VectorDB
 from .cross_file import build_symbol_index, find_symbol
+from .dump import dump  # noqa: F401
+from .error_ingest import ingest_error_logs
+from .git_utils import (commit_changes, create_auto_branch,
+                        generate_commit_message)
+from .inline_edit import InlineEdit
 from .lsp_bridge import LspBridge
-from .inline_edit import InlineEditor
 from .test_loop import TestLoop
+from .tui import LlmcodeTUI
+from .vector_db import VectorDB
 
 
 class SwitchCoder(Exception):
@@ -1871,27 +1872,41 @@ def get_help_md():
 
 tui_app = typer.Typer()
 
-@app.command()
+
+@tui_app.command()
 def tui():
     """Run the interactive TUI."""
     LlmcodeTUI().run()
 
-@app.command()
-def scope(root: str = ".", min_size: int = 0, max_size: int = None, include: str = None, exclude: str = None):
+
+@tui_app.command()
+def scope(
+    root: str = ".",
+    min_size: int = 0,
+    max_size: int = None,
+    include: str = None,
+    exclude: str = None,
+):
     """Show files by size and select scope."""
     files = list_files_by_size(root, min_size, max_size)
     paths = [f[0] for f in files]
-    selected = select_scope(paths, include=[include] if include else None, exclude=[exclude] if exclude else None)
+    selected = select_scope(
+        paths,
+        include=[include] if include else None,
+        exclude=[exclude] if exclude else None,
+    )
     for f in selected:
         print(f)
 
-@app.command()
+
+@tui_app.command()
 def log(logs: str):
     """Feed error logs/stack traces into AI."""
     formatted = ingest_error_logs(logs.split("\n"))
     print(formatted)
 
-@app.command()
+
+@tui_app.command()
 def commit(message: str = None):
     """Auto branch creation and AI-generated commit message."""
     branch = create_auto_branch()
@@ -1903,28 +1918,32 @@ def commit(message: str = None):
     commit_changes(message)
     print(f"Committed with message: {message}")
 
-@app.command()
+
+@tui_app.command()
 def search(query: str, n_results: int = 5):
     """Semantic code search using VectorDB."""
     db = VectorDB()
     results = db.search(query, n_results)
     print(results)
 
-@app.command()
+
+@tui_app.command()
 def edit(file_path: str, diff_hunks: str):
     """Apply inline edits with preview and rollback."""
     editor = InlineEditor()
     hunks = diff_hunks.split("\n\n")
     editor.apply_patch(file_path, hunks)
 
-@app.command()
+
+@tui_app.command()
 def test(files: str = None):
     """Run unit tests and feedback loop."""
     loop = TestLoop()
     feedback = loop.feedback(files=files.split(",") if files else None)
     print(feedback)
 
-@app.command()
+
+@tui_app.command()
 def lsp(file_path: str, line: int, character: int):
     """Minimal LSP: go-to-definition, diagnostics, hover."""
     lsp = LspBridge(["pylsp"])
@@ -1932,20 +1951,24 @@ def lsp(file_path: str, line: int, character: int):
     print("Diagnostics:", lsp.get_diagnostics(file_path))
     print("Hover:", lsp.hover(file_path, line, character))
 
-@app.command()
+
+@tui_app.command()
 def index(root: str = "llmcode"):
     """Build cross-file symbol index."""
     build_symbol_index(root)
     print("Symbol index built.")
 
-@app.command()
+
+@tui_app.command()
 def symbol(name: str):
     """Find symbol definition across repo."""
     result = find_symbol(name)
     print(result)
 
+
 def main():
     tui_app()
+
 
 if __name__ == "__main__":
     main()

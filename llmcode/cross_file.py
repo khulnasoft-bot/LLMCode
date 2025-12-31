@@ -1,9 +1,10 @@
 import ast
-import os
 import json
+import os
 from typing import Dict, List, Tuple
 
 INDEX_FILE = ".cross_file_index.json"
+
 
 def extract_symbols_from_file(filepath: str) -> List[Tuple[str, str]]:
     """
@@ -23,6 +24,7 @@ def extract_symbols_from_file(filepath: str) -> List[Tuple[str, str]]:
         pass
     return symbols
 
+
 def build_symbol_index(root: str) -> Dict[str, Dict]:
     """
     Walk repo, extract symbols, build symbol → file/type mapping.
@@ -39,6 +41,7 @@ def build_symbol_index(root: str) -> Dict[str, Dict]:
         json.dump(index, f, indent=2)
     return index
 
+
 def load_symbol_index() -> Dict[str, Dict]:
     """
     Load symbol index from disk.
@@ -48,6 +51,7 @@ def load_symbol_index() -> Dict[str, Dict]:
     with open(INDEX_FILE, "r") as f:
         return json.load(f)
 
+
 def find_symbol(symbol: str) -> Dict:
     """
     Find where a symbol is defined.
@@ -55,6 +59,7 @@ def find_symbol(symbol: str) -> Dict:
     """
     index = load_symbol_index()
     return index.get(symbol)
+
 
 # Example usage:
 # build_symbol_index("./llmcode")

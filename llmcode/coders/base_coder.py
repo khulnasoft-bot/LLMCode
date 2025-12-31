@@ -1045,7 +1045,9 @@ class Coder:
         if self.repo:
             self.commit_before_message.append(self.repo.get_head_commit_sha())
 
-    def run(self, with_message: Optional[str] = None, preproc: bool = True) -> Optional[str]:
+    def run(
+        self, with_message: Optional[str] = None, preproc: bool = True
+    ) -> Optional[str]:
         """
         The main execution loop for the coder.
 

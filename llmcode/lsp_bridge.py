@@ -2,9 +2,8 @@ import json
 import os
 from typing import Dict, List, Optional
 
-from pygls.client import JsonRpcClient
-from pygls.lsp.types import (Diagnostic, Hover, Location, Position,
-                             TextDocumentIdentifier)
+from pygls.client import JsonRPCClient
+from lsprotocol.types import (Diagnostic, Hover, Location, Position, TextDocumentIdentifier)
 
 from llmcode.cross_file import find_symbol
 

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+
 class CopilotStatus:
     def __init__(self, repo_root="."):
         self.repo_root = Path(repo_root)
@@ -15,8 +16,8 @@ class CopilotStatus:
             "Inline Editing": "inline_edit.py",
             "Test & Diagnostics Loop": "test_loop.py",
             "Automation & Retry Loop": None,  # Phase 3
-            "GUI/TUI Experience": None,       # Phase 3
-            "Team/Collaboration Features": None, # Phase 3
+            "GUI/TUI Experience": None,  # Phase 3
+            "Team/Collaboration Features": None,  # Phase 3
         }
         self.phases = {
             "Phase 1: Developer Essentials": [
@@ -36,7 +37,7 @@ class CopilotStatus:
                 "Automation & Retry Loop",
                 "GUI/TUI Experience",
                 "Team/Collaboration Features",
-            ]
+            ],
         }
 
     def feature_status(self, feature):
@@ -61,6 +62,7 @@ class CopilotStatus:
         out = self.repo_root / ".copilot_status.json"
         out.write_text(json.dumps(status_dict, indent=2))
         return out
+
 
 # Usage example:
 # status = CopilotStatus()

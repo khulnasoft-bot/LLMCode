@@ -1,7 +1,9 @@
-import subprocess
 import json
+import subprocess
 from pathlib import Path
+
 from .lsp_bridge import LspBridge
+
 
 class TestLoop:
     def __init__(self, repo_root=".", lsp_server_cmd=None):
@@ -11,8 +13,7 @@ class TestLoop:
     def run_tests(self, cmd=["pytest", "-q"]):
         try:
             result = subprocess.run(
-                cmd, cwd=self.repo_root,
-                capture_output=True, text=True
+                cmd, cwd=self.repo_root, capture_output=True, text=True
             )
             return {
                 "status": "ok" if result.returncode == 0 else "fail",
@@ -34,10 +35,7 @@ class TestLoop:
         return diags
 
     def feedback(self, files=None):
-        data = {
-            "diagnostics": self.run_diagnostics(files),
-            "tests": self.run_tests()
-        }
+        data = {"diagnostics": self.run_diagnostics(files), "tests": self.run_tests()}
         out_file = self.repo_root / ".test_feedback.json"
         out_file.write_text(json.dumps(data, indent=2))
         return data
@@ -48,6 +46,7 @@ class TestLoop:
             subprocess.run(["git", "commit", "-m", commit_msg], cwd=self.repo_root)
         elif feedback["tests"]["status"] != "ok":
             print("Test failures detected. AI should suggest fixes.")
+
 
 # Usage example:
 # from llmcode.test_loop import TestLoop

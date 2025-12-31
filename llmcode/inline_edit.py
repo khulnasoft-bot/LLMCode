@@ -1,11 +1,15 @@
 import difflib
 import os
 import subprocess
-from typing import List, Tuple, Optional
-from llmcode.lsp_bridge import LspBridge
 from pathlib import Path
+from typing import List, Optional, Tuple
+
 from termcolor import colored
+
+from llmcode.lsp_bridge import LspBridge
+
 from .test_loop import TestLoop
+
 
 class InlineEdit:
     def __init__(self, file_path: str, lsp_server_cmd: Optional[List[str]] = None):
@@ -24,7 +28,11 @@ class InlineEdit:
         """
         Parse unified diff and store hunks.
         """
-        self.diff = list(difflib.unified_diff(self.original, diff_text.splitlines(keepends=True), lineterm=""))
+        self.diff = list(
+            difflib.unified_diff(
+                self.original, diff_text.splitlines(keepends=True), lineterm=""
+            )
+        )
 
     def apply_patch(self):
         """
@@ -32,13 +40,23 @@ class InlineEdit:
         """
         # Use SequenceMatcher to anchor hunks
         patched = self.original.copy()
-        matcher = difflib.SequenceMatcher(None, self.original, [line[1:] for line in self.diff if line.startswith(('-', '+', ' '))])
+        matcher = difflib.SequenceMatcher(
+            None,
+            self.original,
+            [line[1:] for line in self.diff if line.startswith(("-", "+", " "))],
+        )
         opcodes = matcher.get_opcodes()
         for tag, i1, i2, j1, j2 in opcodes:
-            if tag == 'replace' or tag == 'delete' or tag == 'insert':
+            if tag == "replace" or tag == "delete" or tag == "insert":
                 # Fuzzy match failed, mark conflict
                 self.conflicts.append((i1, i2, j1, j2))
-                patched[i1:i2] = [f"<<<<<<< CONFLICT\n"] + patched[i1:i2] + [f"=======\n"] + [line for line in self.diff if line.startswith('+')] + [f">>>>>>> AI PATCH\n"]
+                patched[i1:i2] = (
+                    [f"<<<<<<< CONFLICT\n"]
+                    + patched[i1:i2]
+                    + [f"=======\n"]
+                    + [line for line in self.diff if line.startswith("+")]
+                    + [f">>>>>>> AI PATCH\n"]
+                )
         self.preview = patched
         return patched
 
@@ -82,7 +100,9 @@ class InlineEdit:
             diags = self.lsp.get_diagnostics(self.file_path)
             print("LSP Diagnostics:", diags)
         print("Running tests...")
-        result = subprocess.run(["pytest", self.file_path], capture_output=True, text=True)
+        result = subprocess.run(
+            ["pytest", self.file_path], capture_output=True, text=True
+        )
         print(result.stdout)
         if result.returncode != 0:
             print("Test failures detected. Feed results back to AI for autofix.")

@@ -1,6 +1,8 @@
+from typing import List
+
 import chromadb
 from chromadb.config import Settings
-from typing import List
+
 
 class VectorDB:
     def __init__(self, persist_dir: str = ".chromadb"):
@@ -8,11 +10,14 @@ class VectorDB:
         self.collection = self.client.get_or_create_collection("code")
 
     def add_code_chunk(self, chunk_id: str, code: str, metadata: dict = None):
-        self.collection.add(documents=[code], ids=[chunk_id], metadatas=[metadata or {}])
+        self.collection.add(
+            documents=[code], ids=[chunk_id], metadatas=[metadata or {}]
+        )
 
     def search(self, query: str, n_results: int = 5) -> List[dict]:
         results = self.collection.query(query_texts=[query], n_results=n_results)
         return results
+
 
 # Example usage:
 # db = VectorDB()

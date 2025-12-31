@@ -1,6 +1,7 @@
 import subprocess
 from typing import Optional
 
+
 def create_auto_branch(session_name: Optional[str] = None) -> str:
     """
     Create a new git branch for the current session.
@@ -8,9 +9,14 @@ def create_auto_branch(session_name: Optional[str] = None) -> str:
     Returns the branch name.
     """
     import datetime
-    branch = session_name or f"llmcode-session-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+
+    branch = (
+        session_name
+        or f"llmcode-session-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    )
     subprocess.run(["git", "checkout", "-b", branch], check=True)
     return branch
+
 
 def generate_commit_message(diff: str) -> str:
     """
@@ -19,6 +25,7 @@ def generate_commit_message(diff: str) -> str:
     """
     # TODO: Integrate with LLM for commit message generation
     return "Update code based on recent changes"
+
 
 def commit_changes(message: str) -> None:
     """
