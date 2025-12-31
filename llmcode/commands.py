@@ -2000,7 +2000,18 @@ def mcp_list():
     """
     List configured MCP servers.
     """
-    print("Listing MCP servers (not yet implemented).")
+    mcp_servers_file = ".llmcode/mcp_servers.txt"
+    try:
+        with open(mcp_servers_file, "r") as f:
+            servers = [line.strip() for line in f if line.strip() and not line.strip().startswith("#")]
+            if not servers:
+                print("No MCP servers configured.")
+                return
+            print("Configured MCP servers:")
+            for server in servers:
+                print(f"- {server}")
+    except FileNotFoundError:
+        print("No MCP servers configured.")
 
 
 @mcp_app.command("add")
@@ -2010,7 +2021,30 @@ def mcp_add(
     """
     Add a new MCP server.
     """
-    print(f"Adding MCP server: {url} (not yet implemented).")
+    mcp_servers_file = ".llmcode/mcp_servers.txt"
+
+    # Validate URL
+    if not re.match(r"^(http|https)://", url):
+        print("Invalid URL format. Please use http:// or https://.")
+        return
+
+    try:
+        with open(mcp_servers_file, "r+") as f:
+            servers = f.read().splitlines()
+            if url in servers:
+                print(f"MCP server '{url}' already exists.")
+                return
+            
+            # if file is not empty, add a newline
+            if servers and servers[-1]:
+                f.write("\n")
+            f.write(url)
+
+        print(f"Added MCP server: {url}")
+    except FileNotFoundError:
+        with open(mcp_servers_file, "w") as f:
+            f.write(url)
+        print(f"Added MCP server: {url}")
 
 
 @mcp_app.command("remove")
@@ -2020,7 +2054,23 @@ def mcp_remove(
     """
     Remove an MCP server.
     """
-    print(f"Removing MCP server: {url} (not yet implemented).")
+    mcp_servers_file = ".llmcode/mcp_servers.txt"
+    try:
+        with open(mcp_servers_file, "r") as f:
+            servers = f.read().splitlines()
+        
+        if url not in servers:
+            print(f"MCP server '{url}' not found.")
+            return
+
+        servers.remove(url)
+
+        with open(mcp_servers_file, "w") as f:
+            f.write("\n".join(servers))
+        
+        print(f"Removed MCP server: {url}")
+    except FileNotFoundError:
+        print(f"MCP server '{url}' not found.")
 
 
 def main():
